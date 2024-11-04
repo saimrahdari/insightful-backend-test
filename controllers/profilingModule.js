@@ -305,35 +305,49 @@ exports.getCurrentHiredJob = asyncHandler(async (req, res) => {
   res.status(200).json(postings);
 });
 exports.sendComingSoonEmail = async (req, res, next) => {
-	const { email } = req.body;
+  const { email } = req.body;
 
-	if (!email) {
-		return res.status(400).json({ message: 'Email is required' });
-	}
+  if (!email) {
+    return res.status(400).json({ message: "Email is required" });
+  }
 
-	let transport = nodemailer.createTransport({
-		host: 'smtp.gmail.com',
-		port: 465,
-		secure: true,
-		auth: {
-			user: process.env.EMAIL,
-			pass: process.env.EMAIL_PASSWORD,
-		},
-	});
+  let transport = nodemailer.createTransport({
+    host: "smtp.titan.email",
+    port: 465,
+    secure: true,
+    auth: {
+      user: process.env.EMAIL,
+      pass: process.env.EMAIL_PASSWORD,
+    },
+  });
 
-	const mailOptions = {
-		from: process.env.EMAIL,
-		to: email, // Use the email from req.body
-		subject: 'New Subscription Email',
-		text: `A new person ${email} has subscribed to your website`,
-	};
+  const mailOptions = {
+    from: process.env.EMAIL,
+    to: "support@insightfulagent.com", // Use the email from req.body
+    subject: "New Subscription Email",
+    text: `A new person ${email} has subscribed to your website`,
+  };
 
-	transport.sendMail(mailOptions, (err, info) => {
-		if (err) {
-			console.error('Error:', err);
-			return next(new ErrorHandler('Internal Server Error', 500));
-		} else {
-			return res.status(200).json({ message: 'Email sent successfully' });
-		}
-	});
+  const mailOptions2 = {
+    from: process.env.EMAIL,
+    to: email, // Use the email from req.body
+    subject: "Congratulations",
+    text: `Congratulations! You have just subscribed to Insightful Agent. We will keep you updated on the latest updates for the platform`,
+  };
+
+  transport.sendMail(mailOptions, (err, info) => {
+    if (err) {
+      console.error("Error:", err);
+      return next(new ErrorHandler("Internal Server Error", 500));
+    } else {
+      transport.sendMail(mailOptions2, (err, info) => {
+        if (err) {
+          console.error("Error:", err);
+          return next(new ErrorHandler("Internal Server Error", 500));
+        } else {
+          return res.status(200).json({ message: "Emails sent successfully" });
+        }
+      });
+    }
+  });
 };
