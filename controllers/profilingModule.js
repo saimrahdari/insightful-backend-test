@@ -324,7 +324,7 @@ exports.sendComingSoonEmail = async (req, res, next) => {
   const subscriberMessage = {
     to: email,
     from: process.env.EMAIL,
-    subject: "Congratulations",
+    subject: "Congratulations ❤️",
     text: "Congratulations! You have just subscribed to Insightful Agent. We will keep you updated on the latest updates for the platform",
   };
 
