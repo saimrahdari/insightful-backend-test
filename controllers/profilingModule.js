@@ -307,7 +307,6 @@ exports.getCurrentHiredJob = asyncHandler(async (req, res) => {
   });
   res.status(200).json(postings);
 });
-
 exports.sendComingSoonEmail = async (req, res, next) => {
   const { email } = req.body;
 
