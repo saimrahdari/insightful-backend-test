@@ -8,6 +8,7 @@ var path = require("path");
 var fs = require("fs");
 var mongoose = require("mongoose");
 router.use(bodyParser.json());
+const sgMail = require("@sendgrid/mail");
 
 var authenticate = require("../middleware/auth");
 var asyncHandler = require("../middleware/asyncHandler");
@@ -18,6 +19,8 @@ var Otp = require("../models/otp");
 var Posting = require("../models/posting");
 var Notification = require("../models/notification");
 var Transaction = require("../models/transaction");
+
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 exports.register = async (req, res, next) => {
   var exists = await User.findOne({ email: req.body.email });
@@ -304,6 +307,7 @@ exports.getCurrentHiredJob = asyncHandler(async (req, res) => {
   });
   res.status(200).json(postings);
 });
+
 exports.sendComingSoonEmail = async (req, res, next) => {
   const { email } = req.body;
 
@@ -311,43 +315,28 @@ exports.sendComingSoonEmail = async (req, res, next) => {
     return res.status(400).json({ message: "Email is required" });
   }
 
-  let transport = nodemailer.createTransport({
-    host: "smtp.titan.email",
-    port: 465,
-    secure: true,
-    auth: {
-      user: process.env.EMAIL,
-      pass: process.env.EMAIL_PASSWORD,
-    },
-  });
-
-  const mailOptions = {
+  const supportMessage = {
+    to: "support@insightfulagent.com",
     from: process.env.EMAIL,
-    to: "support@insightfulagent.com", // Use the email from req.body
     subject: "New Subscription Email",
     text: `A new person ${email} has subscribed to your website`,
   };
 
-  const mailOptions2 = {
+  const subscriberMessage = {
+    to: email,
     from: process.env.EMAIL,
-    to: email, // Use the email from req.body
     subject: "Congratulations",
-    text: `Congratulations! You have just subscribed to Insightful Agent. We will keep you updated on the latest updates for the platform`,
+    text: "Congratulations! You have just subscribed to Insightful Agent. We will keep you updated on the latest updates for the platform",
   };
 
-  transport.sendMail(mailOptions, (err, info) => {
-    if (err) {
-      console.error("Error:", err);
-      return next(new ErrorHandler("Internal Server Error", 500));
-    } else {
-      transport.sendMail(mailOptions2, (err, info) => {
-        if (err) {
-          console.error("Error:", err);
-          return next(new ErrorHandler("Internal Server Error", 500));
-        } else {
-          return res.status(200).json({ message: "Emails sent successfully" });
-        }
-      });
-    }
-  });
+  try {
+    await sgMail.send(supportMessage);
+
+    await sgMail.send(subscriberMessage);
+
+    return res.status(200).json({ message: "Emails sent successfully" });
+  } catch (error) {
+    console.error("Error:", error);
+    return next(new ErrorHandler("Internal Server Error", 500));
+  }
 };
